@@ -837,7 +837,61 @@ export default function App() {
                 {player.passTwo.initialRating ?? "Not calculated"}
               </p>
 
+              {player.passTwo.specialAdjustmentIncludedValues.length > 0 && (
+                <p>
+                  <strong>Special Included:</strong>{" "}
+                  {player.passTwo.specialAdjustmentIncludedValues.join(", ")}
+                </p>
+              )}
+
+              {player.passTwo.specialAdjustmentExcludedValues.length > 0 && (
+                <p>
+                  <strong>Special Excluded:</strong>{" "}
+                  {player.passTwo.specialAdjustmentExcludedValues.join(", ")}
+                </p>
+              )}
+
               <p>{player.passTwo.reason}</p>
+
+              {player.passTwo.specialAdjustmentSteps.length > 0 && (
+                <details>
+                  <summary style={styles.summary}>
+                    View Initial Rating Special Adjustment Steps
+                  </summary>
+
+                  <div style={styles.deltaList}>
+                    {player.passTwo.specialAdjustmentSteps.map((step) => (
+                      <div key={step.step} style={styles.deltaCard}>
+                        <p>
+                          <strong>{step.step}</strong>
+                        </p>
+
+                        <p>
+                          <strong>Current Mean:</strong>{" "}
+                          {formatMeanValue(step.currentMean)}
+                        </p>
+
+                        <p>
+                          <strong>Comparison Mean:</strong>{" "}
+                          {formatMeanValue(step.comparisonMean)}
+                        </p>
+
+                        <p>
+                          <strong>Included:</strong>{" "}
+                          {step.includedValues.join(", ") || "-"}
+                        </p>
+
+                        <p>
+                          <strong>Excluded:</strong>{" "}
+                          {step.excludedValues.join(", ") || "-"}
+                        </p>
+
+                        <p>{step.explanation}</p>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
           ))}
         </div>

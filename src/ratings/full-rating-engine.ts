@@ -3,6 +3,7 @@ import { calculateSpecialAdjustment } from "./special-adjustment";
 import { calculateStandardAdjustment } from "./standard-adjustment";
 import { calculateInitialRatingForUnratedPlayer } from "./initial-rating";
 import type { EstimatedRatingInput } from "./estimated-rating";
+import type { SpecialAdjustmentStep } from "./types";
 
 export type FullEnginePlayerInput = {
   id: string;
@@ -54,14 +55,7 @@ export type SpecialAdjustmentCheck = {
   adjustedRating: number | null;
   includedValues: number[];
   excludedValues: number[];
-  steps: {
-    step: string;
-    currentMean: number;
-    comparisonMean: number | null;
-    includedValues: number[];
-    excludedValues: number[];
-    explanation: string;
-  }[];
+  steps: SpecialAdjustmentStep[];
 };
 
 export type PassTwoResult = {
@@ -76,7 +70,11 @@ export type PassTwoResult = {
   estimateWasCorrected: boolean;
   estimateValidationReason: string;
   reason: string;
+
   specialAdjustmentIncludedValues: number[];
+  specialAdjustmentExcludedValues: number[];
+  specialAdjustmentSteps: SpecialAdjustmentStep[];
+
   winsAgainstRated: number[];
   lossesAgainstRated: number[];
 };
@@ -142,6 +140,25 @@ function getValidMatches(matches: FullEngineMatchInput[]) {
       (match.winnerId === match.playerAId || match.winnerId === match.playerBId)
     );
   });
+}
+
+function emptySpecialAdjustmentCheck(): SpecialAdjustmentCheck {
+  return {
+    applies: false,
+    triggerReasons: [],
+    adjustedRating: null,
+    includedValues: [],
+    excludedValues: [],
+    steps: [],
+  };
+}
+
+function emptyPassTwoSpecialAdjustmentData() {
+  return {
+    specialAdjustmentIncludedValues: [],
+    specialAdjustmentExcludedValues: [],
+    specialAdjustmentSteps: [],
+  };
 }
 
 function shouldApplySpecialAdjustment(passOne: PassOneResult) {
@@ -318,7 +335,8 @@ export function calculateFullTournamentRating({
         ? {
             qualifies: false,
             adjustedRating: 0,
-            reason: "Player is unrated before tournament, so Standard Adjustment is not checked in Pass 1.",
+            reason:
+              "Player is unrated before tournament, so Standard Adjustment is not checked in Pass 1.",
           }
         : calculateStandardAdjustment({
             preRating: playerRating,
@@ -332,12 +350,8 @@ export function calculateFullTournamentRating({
       playerRating === null ? [] : shouldApplySpecialAdjustment(passOne);
 
     let special: SpecialAdjustmentCheck = {
-      applies: false,
+      ...emptySpecialAdjustmentCheck(),
       triggerReasons: specialTriggerReasons,
-      adjustedRating: null,
-      includedValues: [],
-      excludedValues: [],
-      steps: [],
     };
 
     if (playerRating !== null && specialTriggerReasons.length > 0) {
@@ -398,9 +412,10 @@ export function calculateFullTournamentRating({
         estimatedRatingUsed: null,
         generatedEstimatedRating: null,
         estimateWasCorrected: false,
-        estimateValidationReason: "Player already had a rating before tournament.",
+        estimateValidationReason:
+          "Player already had a rating before tournament.",
         reason: "Pass 2 is not applicable for already-rated players.",
-        specialAdjustmentIncludedValues: [],
+        ...emptyPassTwoSpecialAdjustmentData(),
         winsAgainstRated: [],
         lossesAgainstRated: [],
       };
@@ -433,7 +448,9 @@ export function calculateFullTournamentRating({
     }
 
     const sortedWinsAgainstRated = [...winsAgainstRated].sort((a, b) => b - a);
-    const sortedLossesAgainstRated = [...lossesAgainstRated].sort((a, b) => a - b);
+    const sortedLossesAgainstRated = [...lossesAgainstRated].sort(
+      (a, b) => a - b
+    );
 
     const initial = calculateInitialRatingForUnratedPlayer({
       winsAgainstRated: sortedWinsAgainstRated,
@@ -457,6 +474,9 @@ export function calculateFullTournamentRating({
       reason: initial.reason,
       specialAdjustmentIncludedValues:
         initial.specialAdjustmentIncludedValues ?? [],
+      specialAdjustmentExcludedValues:
+        initial.specialAdjustmentExcludedValues ?? [],
+      specialAdjustmentSteps: initial.specialAdjustmentSteps ?? [],
       winsAgainstRated: sortedWinsAgainstRated,
       lossesAgainstRated: sortedLossesAgainstRated,
     };
@@ -560,6 +580,7 @@ export function calculateFullTournamentRating({
       "Standard Adjustment applies when net gain is 60+, or net gain is 40+ with at least two 20+ point wins.",
       "Special Adjustment is checked after Pass 1 for rated players.",
       "Pass 2 calculates initial ratings for unrated players using matches against rated/adjusted players.",
+      "If an unrated player has mixed wins/losses and worst loss is below best win, Pass 2 uses the Special Adjustment formula and displays the full step calculation.",
       "Initial ratings are protected with minimum 200 logic.",
       "Final Pass uses fixed starting ratings and applies all valid matches.",
       "Low-rating protection caps a loss at -3 when the player's starting rating is below 100.",

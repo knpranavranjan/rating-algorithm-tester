@@ -1,4 +1,5 @@
 import { calculateSpecialAdjustment } from "./special-adjustment";
+import type { SpecialAdjustmentStep } from "./types";
 import {
   calculateProgrammaticEstimatedRating,
   validateEstimatedRatingForTournamentResult,
@@ -27,7 +28,10 @@ export type InitialRatingResult = {
   generatedEstimate?: EstimatedRatingResult;
   estimateWasCorrected?: boolean;
   estimateValidationReason?: string;
+
   specialAdjustmentIncludedValues?: number[];
+  specialAdjustmentExcludedValues?: number[];
+  specialAdjustmentSteps?: SpecialAdjustmentStep[];
 };
 
 function minimumRating(value: number) {
@@ -35,13 +39,23 @@ function minimumRating(value: number) {
 }
 
 function cleanRatings(values: number[], sortType: "ASC" | "DESC") {
-  const cleaned = [...values].filter((value) => Number.isFinite(value) && value > 0);
+  const cleaned = [...values].filter(
+    (value) => Number.isFinite(value) && value > 0
+  );
 
   if (sortType === "ASC") {
     return cleaned.sort((a, b) => a - b);
   }
 
   return cleaned.sort((a, b) => b - a);
+}
+
+function emptySpecialAdjustmentData() {
+  return {
+    specialAdjustmentIncludedValues: [],
+    specialAdjustmentExcludedValues: [],
+    specialAdjustmentSteps: [],
+  };
 }
 
 function resolveEstimatedRating({
@@ -126,6 +140,7 @@ export function calculateInitialRatingForUnratedPlayer({
       highestWin,
       lowestLoss,
       estimatedRatingUsed: null,
+      ...emptySpecialAdjustmentData(),
       reason:
         "Initial rating cannot be calculated because the unrated player has no matches against rated players.",
     };
@@ -152,6 +167,7 @@ export function calculateInitialRatingForUnratedPlayer({
         generatedEstimate: resolvedEstimate.generatedEstimate,
         estimateWasCorrected: resolvedEstimate.estimateWasCorrected,
         estimateValidationReason: resolvedEstimate.estimateValidationReason,
+        ...emptySpecialAdjustmentData(),
         reason:
           "Estimated rating is required because the unrated player won all matches against rated players.",
       };
@@ -169,6 +185,7 @@ export function calculateInitialRatingForUnratedPlayer({
       generatedEstimate: resolvedEstimate.generatedEstimate,
       estimateWasCorrected: resolvedEstimate.estimateWasCorrected,
       estimateValidationReason: resolvedEstimate.estimateValidationReason,
+      ...emptySpecialAdjustmentData(),
       reason:
         "Estimated rating is used because the unrated player won all matches against rated players.",
     };
@@ -195,6 +212,7 @@ export function calculateInitialRatingForUnratedPlayer({
         generatedEstimate: resolvedEstimate.generatedEstimate,
         estimateWasCorrected: resolvedEstimate.estimateWasCorrected,
         estimateValidationReason: resolvedEstimate.estimateValidationReason,
+        ...emptySpecialAdjustmentData(),
         reason:
           "Estimated rating is required because the unrated player lost all matches against rated players.",
       };
@@ -212,6 +230,7 @@ export function calculateInitialRatingForUnratedPlayer({
       generatedEstimate: resolvedEstimate.generatedEstimate,
       estimateWasCorrected: resolvedEstimate.estimateWasCorrected,
       estimateValidationReason: resolvedEstimate.estimateValidationReason,
+      ...emptySpecialAdjustmentData(),
       reason:
         "Estimated rating is used because the unrated player lost all matches against rated players.",
     };
@@ -227,6 +246,7 @@ export function calculateInitialRatingForUnratedPlayer({
       highestWin,
       lowestLoss,
       estimatedRatingUsed: null,
+      ...emptySpecialAdjustmentData(),
       reason:
         "Estimated rating is ignored. Player has both wins and losses. Since worst loss is greater than or equal to best win, initial rating is the best win rating.",
     };
@@ -247,6 +267,8 @@ export function calculateInitialRatingForUnratedPlayer({
     lowestLoss,
     estimatedRatingUsed: null,
     specialAdjustmentIncludedValues: specialAdjustment.includedValues,
+    specialAdjustmentExcludedValues: specialAdjustment.excludedValues,
+    specialAdjustmentSteps: specialAdjustment.steps,
     reason:
       "Estimated rating is ignored. Player has both wins and losses, and worst loss is below best win, so Special Adjustment formula is used.",
   };
