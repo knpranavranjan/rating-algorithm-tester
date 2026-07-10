@@ -32,6 +32,7 @@ export type SpecialAdjustmentStep = {
   includedValues: number[];
   excludedValues: number[];
   currentMean: number;
+  comparisonMean: number | null;
   explanation: string;
 };
 

@@ -146,6 +146,14 @@ function nextMatchId(matches: EditableMatch[]) {
   return `M${matches.length + 1}`;
 }
 
+function formatMeanValue(value: number | null) {
+  if (value === null) {
+    return "Not applicable";
+  }
+
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
 export default function App() {
   const [players, setPlayers] = useState<EditablePlayer[]>(defaultPlayers);
   const [matches, setMatches] = useState<EditableMatch[]>(defaultMatches);
@@ -750,7 +758,12 @@ export default function App() {
                             <strong>{step.step}</strong>
                           </p>
                           <p>
-                            <strong>Mean:</strong> {step.currentMean}
+                            <strong>Current Mean:</strong>{" "}
+                            {formatMeanValue(step.currentMean)}
+                          </p>
+                          <p>
+                            <strong>Comparison Mean:</strong>{" "}
+                            {formatMeanValue(step.comparisonMean)}
                           </p>
                           <p>
                             <strong>Included:</strong>{" "}

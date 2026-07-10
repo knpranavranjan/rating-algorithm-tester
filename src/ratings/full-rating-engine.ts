@@ -57,6 +57,7 @@ export type SpecialAdjustmentCheck = {
   steps: {
     step: string;
     currentMean: number;
+    comparisonMean: number | null;
     includedValues: number[];
     excludedValues: number[];
     explanation: string;
@@ -431,9 +432,12 @@ export function calculateFullTournamentRating({
       }
     }
 
+    const sortedWinsAgainstRated = [...winsAgainstRated].sort((a, b) => b - a);
+    const sortedLossesAgainstRated = [...lossesAgainstRated].sort((a, b) => a - b);
+
     const initial = calculateInitialRatingForUnratedPlayer({
-      winsAgainstRated,
-      lossesAgainstRated,
+      winsAgainstRated: sortedWinsAgainstRated,
+      lossesAgainstRated: sortedLossesAgainstRated,
       estimatedRating: null,
       estimatedRatingProfile: player.estimatedRatingProfile,
     });
@@ -453,8 +457,8 @@ export function calculateFullTournamentRating({
       reason: initial.reason,
       specialAdjustmentIncludedValues:
         initial.specialAdjustmentIncludedValues ?? [],
-      winsAgainstRated,
-      lossesAgainstRated,
+      winsAgainstRated: sortedWinsAgainstRated,
+      lossesAgainstRated: sortedLossesAgainstRated,
     };
 
     passTwoMap.set(player.id, passTwo);
